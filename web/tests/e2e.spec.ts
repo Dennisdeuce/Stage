@@ -147,3 +147,28 @@ test("deep link /v/<slug> lands on the venues tab (SPRINT §1.2)", async ({ page
   await expect(page).toHaveTitle(/Venues — PNW Stage/);
   await expect(page.getByText("The Showbox").first()).toBeVisible();
 });
+
+test("share button copies the deep link; Add to calendar downloads a valid .ics (SPRINT §2)", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/e/1-japanese-breakfast");
+  const drawer = page.getByRole("dialog");
+  await expect(drawer).toBeVisible();
+
+  // Headless desktop Chromium has no navigator.share → clipboard fallback.
+  await drawer.getByRole("button", { name: "Share" }).click();
+  await expect(drawer.getByRole("button", { name: "Link copied" })).toBeVisible();
+  const clip = await page.evaluate(() => navigator.clipboard.readText());
+  expect(clip).toBe("https://pnw-stage.pages.dev/e/1-japanese-breakfast");
+
+  const downloadP = page.waitForEvent("download");
+  await drawer.getByRole("button", { name: "Add to calendar" }).click();
+  const download = await downloadP;
+  expect(download.suggestedFilename()).toBe("japanese-breakfast.ics");
+  const body = await import("node:fs/promises").then((fs) =>
+    download.path().then((p) => fs.readFile(p!, "utf8"))
+  );
+  expect(body).toContain("BEGIN:VCALENDAR");
+  expect(body).toContain("SUMMARY:Japanese Breakfast");
+  expect(body).toContain("DTSTART;VALUE=DATE:20260620"); // date-only fixture → all-day
+  expect(body).toContain("LOCATION:The Showbox\\, Seattle\\, WA");
+});

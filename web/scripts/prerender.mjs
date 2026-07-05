@@ -99,6 +99,45 @@ function eventJsonLd(e) {
   return item;
 }
 
+// RSS 2.0 feed of shows first seen in the last 7 days (SPRINT §2). Refreshed
+// on every deploy — the scrape workflow triggers one nightly.
+function rss(events) {
+  const cutoff = Date.now() - 7 * 86_400_000;
+  const items = events
+    .filter((e) => e.first_seen && Date.parse(e.first_seen) >= cutoff)
+    .sort((a, b) => Date.parse(b.first_seen) - Date.parse(a.first_seen))
+    .slice(0, 100)
+    .map((e) => {
+      const url = `${SITE_URL}/e/${e.id}-${slugify(e.title)}`;
+      const bits = [
+        `${e.category} at ${e.venue_name}${e.city ? `, ${e.city}` : ""} on ${e.date_local}.`,
+        e.ticket_url ? "Primary ticket link on the event page." : null
+      ].filter(Boolean);
+      return [
+        "    <item>",
+        `      <title>${esc(`${e.headliner ?? e.title} at ${e.venue_name} — ${e.date_local}`)}</title>`,
+        `      <link>${esc(url)}</link>`,
+        `      <guid isPermaLink="true">${esc(url)}</guid>`,
+        `      <pubDate>${new Date(e.first_seen).toUTCString()}</pubDate>`,
+        `      <description>${esc(bits.join(" "))}</description>`,
+        "    </item>"
+      ].join("\n");
+    });
+  return [
+    `<?xml version="1.0" encoding="UTF-8"?>`,
+    `<rss version="2.0">`,
+    `  <channel>`,
+    `    <title>PNW Stage — newly announced shows</title>`,
+    `    <link>${SITE_URL}/</link>`,
+    `    <description>Concerts &amp; comedy just announced across the Pacific Northwest.</description>`,
+    `    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>`,
+    items.join("\n"),
+    `  </channel>`,
+    `</rss>`,
+    ``
+  ].join("\n");
+}
+
 function sitemap(urls) {
   const today = new Date().toISOString().slice(0, 10);
   const entries = urls
@@ -180,7 +219,8 @@ async function main() {
   }
 
   writeFileSync(join(DIST, "sitemap.xml"), sitemap(urls));
-  console.log(`prerender: wrote ${events.length} event + ${venues.size} venue stubs, sitemap with ${urls.length} URLs.`);
+  writeFileSync(join(DIST, "feed.xml"), rss(events));
+  console.log(`prerender: wrote ${events.length} event + ${venues.size} venue stubs, sitemap with ${urls.length} URLs, RSS feed.`);
 }
 
 await main();

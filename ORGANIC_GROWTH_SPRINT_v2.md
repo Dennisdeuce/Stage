@@ -79,12 +79,19 @@ Give search engines and sharers more than one URL.
       card/drawer art is absolutely positioned in fixed-size boxes, so no CLS).
 - [x] PWA precache now includes fonts/SVG/PNG — full offline shell.
 
-## Phase 2 — Shareability & retention
-- [ ] "Share" action on the event drawer (Web Share API, clipboard fallback)
-      using 1.2 deep links.
-- [ ] "Add to calendar" — client-generated `.ics` per event.
-- [ ] Public RSS/Atom feed of newly-announced shows, generated at scrape time
-      by the existing Actions cron (zero new infra).
+## Phase 2 — Shareability & retention ✅ shipped
+- [x] "Share" action on the event drawer (Web Share API, clipboard fallback
+      with a "Link copied" confirmation) using §1.2 deep links
+      (`web/src/lib/share.ts`).
+- [x] "Add to calendar" — client-generated RFC 5545 `.ics` per event
+      (`web/src/lib/ics.ts`): timed events when a start time is known
+      (2h default duration), all-day otherwise; escaped/folded text; ticket
+      link + deep link in the description. No server involved.
+- [x] Public RSS 2.0 feed of shows first seen in the last 7 days at
+      `/feed.xml`, generated in the prerender step and advertised via
+      `<link rel="alternate">` + a footer link. The scrape workflow now
+      triggers a deploy after each successful nightly run, so the feed —
+      and the prerendered stubs and sitemap — refresh daily (zero new infra).
 
 ## Phase 3 — Distribution
 - [ ] Embeddable "upcoming shows" widget for venue/artist sites (iframe or
@@ -128,3 +135,9 @@ Per instruction, none of these are acted on until signed off:
   With no external requests left, the full e2e suite is now **9/9 green in
   the sandbox** (was 8/9 with the font-egress exception) and runs in ~4s
   (was ~70s of waiting on dead third-party requests). Phase 1 complete.
+- **2026-07-05** — Phase 2 shipped: drawer share button (clipboard fallback
+  verified end-to-end in e2e, including clipboard contents), `.ics` download
+  (all-day and timed paths; file contents asserted in e2e), `/feed.xml` RSS
+  of the last 7 days' new shows (smoke-tested against mock PostgREST —
+  correct freshness filtering and escaping), nightly scrape→deploy chain.
+  Suite 10/10.
