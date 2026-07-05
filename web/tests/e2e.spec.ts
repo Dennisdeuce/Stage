@@ -41,14 +41,14 @@ test("calendar renders week, month, and year with no console errors", async ({ p
   await page.getByRole("button", { name: "Calendar" }).click();
   await expect(page.locator(".fc")).toBeVisible();
 
-  await page.getByRole("button", { name: "Month" }).click();
+  await page.getByRole("button", { name: "Month", exact: true }).click();
   await expect(page.locator(".fc-dayGridMonth-view")).toBeVisible();
   await page.screenshot({ path: `${SCREENS}/calendar-month.png`, fullPage: true });
 
-  await page.getByRole("button", { name: "Week" }).click();
+  await page.getByRole("button", { name: "Week", exact: true }).click();
   await expect(page.locator(".fc-timeGridWeek-view")).toBeVisible();
 
-  await page.getByRole("button", { name: "Year" }).click();
+  await page.getByRole("button", { name: "Year", exact: true }).click();
   await expect(page.locator(".fc-multiMonthYear-view")).toBeVisible();
   await page.screenshot({ path: `${SCREENS}/calendar-year.png`, fullPage: true });
 
@@ -92,4 +92,28 @@ test("mobile (390px) has no horizontal overflow and registers a PWA manifest", a
   const manifestHref = await page.getAttribute('link[rel="manifest"]', "href");
   expect(manifestHref).toBeTruthy();
   await page.screenshot({ path: `${SCREENS}/mobile.png`, fullPage: true });
+});
+
+test("SEO baseline: canonical + OG meta, live event JSON-LD, per-tab titles (SPRINT §1.1)", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("article").first()).toBeVisible();
+
+  // Static head: canonical, Open Graph, Twitter card, WebSite JSON-LD.
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /pnw-stage/);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /og\.png$/);
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+
+  // Runtime ItemList JSON-LD reflects the mocked inventory.
+  const jsonld = await page.locator("script#events-jsonld").textContent();
+  const data = JSON.parse(jsonld!);
+  expect(data["@type"]).toBe("ItemList");
+  expect(data.itemListElement.length).toBeGreaterThanOrEqual(3);
+  const first = data.itemListElement[0].item;
+  expect(["MusicEvent", "ComedyEvent", "TheaterEvent", "Event"]).toContain(first["@type"]);
+  expect(first.location["@type"]).toBe("Place");
+
+  // Per-tab titles.
+  await expect(page).toHaveTitle(/PNW Stage — Concerts & Comedy/);
+  await page.getByRole("button", { name: "Venues" }).click();
+  await expect(page).toHaveTitle(/Venues — PNW Stage/);
 });

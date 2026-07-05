@@ -9,6 +9,9 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg"],
       manifest: {
+        id: "/",
+        lang: "en-US",
+        categories: ["entertainment", "music"],
         name: "PNW Stage",
         short_name: "PNW Stage",
         description: "Concerts & comedy across the Pacific Northwest, refreshed daily.",

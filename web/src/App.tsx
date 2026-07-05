@@ -14,6 +14,7 @@ import {
   matches,
   type Filters
 } from "./lib/filters";
+import { injectEventJsonLd, titleForTab } from "./lib/seo";
 import type { EventRow } from "./lib/types";
 
 export default function App() {
@@ -39,6 +40,14 @@ export default function App() {
     const url = qs ? `?${qs}` : window.location.pathname;
     window.history.replaceState(null, "", url);
   }, [filters, tab]);
+
+  // Structured data reflects the full inventory, not the filter state (§1.1).
+  useEffect(() => {
+    injectEventJsonLd(events);
+  }, [events]);
+  useEffect(() => {
+    document.title = titleForTab(tab);
+  }, [tab]);
 
   const visible = useMemo(() => events.filter((e) => matches(e, filters)), [events, filters]);
   const isNew = (e: EventRow) => isNewSince(e.first_seen, since);

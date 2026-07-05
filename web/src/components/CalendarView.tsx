@@ -39,7 +39,7 @@ export function CalendarView({
           center: "title",
           right: "timeGridWeek,dayGridMonth,multiMonthYear"
         }}
-        buttonText={{ today: "Today", week: "Week", month: "Month", year: "Year" }}
+        buttonText={{ today: "Today", week: "Week", month: "Month", year: "Year", multiMonthYear: "Year" }}
         views={{ multiMonthYear: { type: "multiMonth", duration: { months: 12 } } }}
         height="auto"
         events={fcEvents}
