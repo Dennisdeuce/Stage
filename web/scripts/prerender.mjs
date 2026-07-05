@@ -138,6 +138,77 @@ function rss(events) {
   ].join("\n");
 }
 
+// Standalone "new this week" digest page (SPRINT §3): the same 7-day window
+// as the RSS feed, rendered as a shareable, linkable HTML page. Not the SPA
+// shell — fully static, inline styles, zero JS.
+function digestHtml(events) {
+  const cutoff = Date.now() - 7 * 86_400_000;
+  const fresh = events
+    .filter((e) => e.first_seen && Date.parse(e.first_seen) >= cutoff)
+    .sort((a, b) => a.date_local.localeCompare(b.date_local));
+  const byDate = new Map();
+  for (const e of fresh) {
+    if (!byDate.has(e.date_local)) byDate.set(e.date_local, []);
+    byDate.get(e.date_local).push(e);
+  }
+  const day = (iso) =>
+    new Date(`${iso}T12:00:00`).toLocaleDateString("en-US", {
+      weekday: "long", month: "long", day: "numeric"
+    });
+  const sections = [...byDate].map(
+    ([date, evs]) => `
+    <h2>${esc(day(date))}</h2>
+    <ul>
+${evs
+  .map(
+    (e) =>
+      `      <li><a href="${esc(`${SITE_URL}/e/${e.id}-${slugify(e.title)}`)}">${esc(
+        e.headliner ?? e.title
+      )}</a> <span class="v">${esc(`${e.venue_name}${e.city ? `, ${e.city}` : ""}`)}</span></li>`
+  )
+  .join("\n")}
+    </ul>`
+  );
+  const title = "New this week — PNW Stage";
+  const desc = `${fresh.length} newly announced ${fresh.length === 1 ? "show" : "shows"} — concerts & comedy across the Pacific Northwest.`;
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}" />
+<link rel="canonical" href="${SITE_URL}/new-this-week" />
+<link rel="alternate" type="application/rss+xml" title="PNW Stage — newly announced shows" href="/feed.xml" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<meta property="og:title" content="${esc(title)}" />
+<meta property="og:description" content="${esc(desc)}" />
+<meta property="og:url" content="${SITE_URL}/new-this-week" />
+<meta property="og:image" content="${SITE_URL}/og.png" />
+<style>
+  body { background:#0B0F0D; color:#ECE7DC; font:16px/1.5 ui-sans-serif,system-ui,sans-serif;
+         max-width:640px; margin:0 auto; padding:32px 20px; }
+  h1 { font-size:28px; letter-spacing:0.02em; }
+  h1 span { color:#FF5A3C; }
+  .sub, .v { color:#8FA396; font-size:13px; }
+  h2 { margin-top:28px; font-size:14px; text-transform:uppercase; letter-spacing:0.1em; color:#F5B544; }
+  ul { list-style:none; padding:0; display:grid; gap:8px; }
+  a { color:#ECE7DC; }
+  a:hover { color:#F5B544; }
+  footer { margin-top:40px; font-size:12px; color:#8FA396; }
+  footer a { color:#8FA396; }
+</style>
+</head>
+<body>
+<h1>PNW <span>Stage</span> — new this week</h1>
+<p class="sub">${esc(desc)} Generated ${new Date().toISOString().slice(0, 10)}.</p>
+${fresh.length ? sections.join("\n") : "<p>Nothing new in the last 7 days — check the <a href='/'>full listings</a>.</p>"}
+<footer><a href="/">All listings</a> · <a href="/feed.xml">RSS</a> · Primary ticket links only, never resale</footer>
+</body>
+</html>
+`;
+}
+
 function sitemap(urls) {
   const today = new Date().toISOString().slice(0, 10);
   const entries = urls
@@ -218,9 +289,13 @@ async function main() {
     urls.push(url);
   }
 
+  mkdirSync(join(DIST, "new-this-week"), { recursive: true });
+  writeFileSync(join(DIST, "new-this-week", "index.html"), digestHtml(events));
+  urls.push(`${SITE_URL}/new-this-week`);
+
   writeFileSync(join(DIST, "sitemap.xml"), sitemap(urls));
   writeFileSync(join(DIST, "feed.xml"), rss(events));
-  console.log(`prerender: wrote ${events.length} event + ${venues.size} venue stubs, sitemap with ${urls.length} URLs, RSS feed.`);
+  console.log(`prerender: wrote ${events.length} event + ${venues.size} venue stubs, digest, sitemap with ${urls.length} URLs, RSS feed.`);
 }
 
 await main();

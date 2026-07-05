@@ -172,3 +172,14 @@ test("share button copies the deep link; Add to calendar downloads a valid .ics 
   expect(body).toContain("DTSTART;VALUE=DATE:20260620"); // date-only fixture → all-day
   expect(body).toContain("LOCATION:The Showbox\\, Seattle\\, WA");
 });
+
+test("embed widget renders shows with a powered-by backlink (SPRINT §3)", async ({ page }) => {
+  await page.goto("/embed.html?limit=5");
+  const items = page.locator("#list a.ev");
+  await expect(items.first()).toBeVisible();
+  expect(await items.count()).toBeGreaterThanOrEqual(3);
+  await expect(items.first()).toHaveAttribute("href", /pnw-stage\.pages\.dev\/e\/\d+-.*utm_source=embed/);
+  await expect(items.first()).toContainText("Japanese Breakfast");
+  await expect(items.first()).toContainText("The Showbox"); // no venue filter → venue shown
+  await expect(page.locator("#powered")).toBeVisible();
+});

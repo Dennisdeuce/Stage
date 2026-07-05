@@ -93,10 +93,17 @@ Give search engines and sharers more than one URL.
       triggers a deploy after each successful nightly run, so the feed —
       and the prerendered stubs and sitemap — refresh daily (zero new infra).
 
-## Phase 3 — Distribution
-- [ ] Embeddable "upcoming shows" widget for venue/artist sites (iframe or
-      web component reading the same anon views).
-- [ ] Weekly "new this week" digest content generated from the RSS feed.
+## Phase 3 — Distribution ✅ shipped
+- [x] Embeddable "upcoming shows" widget for venue/artist sites:
+      `/embed.html?venue=<slug>` (also `metro`, `cat`, `limit`, `theme`
+      params). Its own dependency-free Vite entry — ~2 KB of JS, one
+      PostgREST fetch, system fonts — with every row deep-linking back to the
+      event page (`utm_source=embed`) and a "Powered by PNW Stage" backlink.
+      Iframe snippet documented in the README.
+- [x] "New this week" digest: `/new-this-week`, a fully static shareable HTML
+      page generated in the prerender step from the same 7-day window as the
+      RSS feed, grouped by date, linked from the app footer and listed in the
+      sitemap. Refreshes nightly with the scrape→deploy chain.
 
 ---
 
@@ -141,3 +148,8 @@ Per instruction, none of these are acted on until signed off:
   of the last 7 days' new shows (smoke-tested against mock PostgREST —
   correct freshness filtering and escaping), nightly scrape→deploy chain.
   Suite 10/10.
+- **2026-07-05** — Phase 3 shipped: `/embed.html` widget (own ~2 KB entry,
+  e2e-covered incl. the backlink) and the `/new-this-week` digest page
+  (smoke-tested via mock PostgREST and screenshot-reviewed). Suite 11/11.
+  **All sprint phases complete.** Remaining work is the Decision Queue,
+  which stays parked pending DT sign-off.

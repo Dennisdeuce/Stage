@@ -3,6 +3,12 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      // Second, dependency-light entry: the embeddable widget (SPRINT §3).
+      input: { main: "index.html", embed: "embed.html" }
+    }
+  },
   plugins: [
     react(),
     VitePWA({

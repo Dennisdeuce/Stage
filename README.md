@@ -106,6 +106,24 @@ supabase/  migrations/*.sql
 .github/   workflows: ci.yml, scrape.yml, deploy.yml
 ```
 
+## Embedding shows on your site (venues & artists)
+
+A lightweight widget (no React, ~2 KB of JS) that any venue or artist site can
+iframe — it reads the same public views and links back to PNW Stage:
+
+```html
+<iframe src="https://pnw-stage.pages.dev/embed.html?venue=the-showbox"
+        width="100%" height="420" style="border:0;border-radius:12px"
+        loading="lazy" title="Upcoming shows — PNW Stage"></iframe>
+```
+
+Query params: `venue=<venue_slug>` · `metro=<metro>` · `cat=music|comedy|arts|other`
+· `limit=<n≤25>` · `theme=dark|light` (dark default).
+
+Other distribution surfaces: `/feed.xml` (RSS of shows announced in the last
+7 days) and `/new-this-week` (shareable digest page), both refreshed by the
+nightly scrape→deploy chain.
+
 ## Local development
 
 **Scraper**

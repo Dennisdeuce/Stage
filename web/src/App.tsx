@@ -138,8 +138,12 @@ export default function App() {
 
       <footer className="mx-auto max-w-5xl px-4 py-8 text-center font-mono text-[11px] uppercase tracking-widest text-moss">
         Event data via Ticketmaster &amp; venue listings · Primary on-sale links only, never resale ·{" "}
+        <a href="/new-this-week" className="underline decoration-ink-600 underline-offset-2 hover:text-bone">
+          New this week
+        </a>{" "}
+        ·{" "}
         <a href="/feed.xml" className="underline decoration-ink-600 underline-offset-2 hover:text-bone">
-          New-shows RSS
+          RSS
         </a>
       </footer>
     </div>
