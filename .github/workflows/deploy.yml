@@ -23,6 +23,13 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      # Per-event/venue HTML stubs + sitemap from the live inventory (skips
+      # itself gracefully if the env or fetch is unavailable) — SPRINT §1.2.
+      - name: Prerender event & venue pages + sitemap
+        run: npm run prerender
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - name: Publish to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:

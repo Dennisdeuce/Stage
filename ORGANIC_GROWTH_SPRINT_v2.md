@@ -48,15 +48,23 @@ Base URL is the Cloudflare Pages default `https://pnw-stage.pages.dev`
 `robots.txt`, `sitemap.xml`). A custom domain is a Decision Queue item; when
 signed off it's a four-file find-and-replace.
 
-### 1.2 Deep links & prerendered pages
+### 1.2 Deep links & prerendered pages ✅ shipped
 Give search engines and sharers more than one URL.
 
-- [ ] Hash- or path-based deep links for individual events and venues
-      (`/e/<id>-<slug>`, `/v/<venue_slug>`), opening the existing drawers.
-- [ ] Build-time prerender step in the deploy workflow: emit static HTML
-      stubs (title/description/OG/JSON-LD per event & venue) from Supabase at
-      deploy time so non-JS crawlers get real content.
-- [ ] Regenerate `sitemap.xml` at deploy time from the same data.
+- [x] Path-based deep links for individual events and venues
+      (`/e/<id>-<slug>`, `/v/<venue_slug>`), opening the existing drawers
+      (`web/src/lib/routes.ts`). The open event owns the URL path; closing
+      returns to `/`. Event links to expandable metros (Portland/Vancouver)
+      auto-reveal the expander. Cloudflare Pages serves prerendered stubs at
+      these paths when they exist and falls back to the SPA shell otherwise.
+- [x] Build-time prerender step in the deploy workflow
+      (`web/scripts/prerender.mjs`, zero-dep): emits static HTML stubs
+      (title/description/OG/canonical/JSON-LD per event & venue) from the
+      public Supabase views at deploy time so non-JS crawlers and unfurlers
+      get real content. Skips itself gracefully if env/fetch is unavailable —
+      it can never break a deploy.
+- [x] `sitemap.xml` regenerated at deploy time from the same payload
+      (root + every event + every venue URL).
 
 ### 1.3 Performance & Core Web Vitals
 - [ ] Self-host the three Google Fonts (removes render-blocking third-party
@@ -101,3 +109,10 @@ Per instruction, none of these are acted on until signed off:
   calendar spec's zero-console-error assertion trips only on the build
   sandbox's blocked Google Fonts egress (CI has network; §1.3's font
   self-hosting removes the dependency entirely).
+- **2026-07-05** — Phase 1.2 shipped: `/e/<id>-<slug>` and `/v/<slug>` deep
+  links (drawer/tab resolution, URL ownership, expandable-metro fallback),
+  prerender step wired into `deploy.yml`, deploy-time sitemap. Three new e2e
+  specs cover the deep-link flows (8/9 green locally, same single
+  sandbox-egress exception as above). Prerender smoke-tested against a local
+  mock PostgREST: correct titles/OG/canonical/JSON-LD, accent-safe slugs
+  (`Café Tacvba` → `cafe-tacvba`), correct sitemap.

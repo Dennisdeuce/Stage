@@ -117,3 +117,33 @@ test("SEO baseline: canonical + OG meta, live event JSON-LD, per-tab titles (SPR
   await page.getByRole("button", { name: "Venues" }).click();
   await expect(page).toHaveTitle(/Venues — PNW Stage/);
 });
+
+test("deep link /e/<id>-<slug> opens the event drawer; card click writes the path (SPRINT §1.2)", async ({ page }) => {
+  await page.goto("/e/1-japanese-breakfast");
+  const drawer = page.getByRole("dialog");
+  await expect(drawer).toBeVisible();
+  await expect(drawer.getByRole("heading", { name: "Japanese Breakfast" })).toBeVisible();
+  await expect(page).toHaveTitle(/Japanese Breakfast at The Showbox — PNW Stage/);
+
+  // Closing returns the URL to the root.
+  await drawer.getByRole("button", { name: "Close" }).click();
+  await expect(page).not.toHaveURL(/\/e\//);
+
+  // Opening from a card (title button) writes the shareable path.
+  await page.locator("article").first().getByRole("button", { name: "Japanese Breakfast", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page).toHaveURL(/\/e\/\d+-/);
+});
+
+test("deep link to an expandable-metro event reveals the expander and opens it (SPRINT §1.2)", async ({ page }) => {
+  await page.goto("/e/9-khruangbin");
+  const drawer = page.getByRole("dialog");
+  await expect(drawer).toBeVisible();
+  await expect(drawer.getByRole("heading", { name: "Khruangbin" })).toBeVisible();
+});
+
+test("deep link /v/<slug> lands on the venues tab (SPRINT §1.2)", async ({ page }) => {
+  await page.goto("/v/the-showbox");
+  await expect(page).toHaveTitle(/Venues — PNW Stage/);
+  await expect(page.getByText("The Showbox").first()).toBeVisible();
+});
