@@ -34,6 +34,7 @@ export function EventCard({ event, isNew, onOpen }: Props) {
           src={posterFor(event)}
           alt=""
           loading="lazy"
+          decoding="async"
           className="absolute inset-0 h-full w-full object-cover opacity-90 transition duration-500 group-hover:scale-[1.04]"
         />
       </button>

@@ -8,6 +8,8 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg"],
+      // Precache the self-hosted fonts and placeholder art for offline use.
+      workbox: { globPatterns: ["**/*.{js,css,html,svg,png,woff2}"] },
       manifest: {
         id: "/",
         lang: "en-US",

@@ -28,7 +28,7 @@ export function EventDrawer({ event, onClose }: { event: EventRow | null; onClos
         </button>
 
         <div className="grain relative aspect-[4/3] w-full shrink-0">
-          <img src={posterFor(event)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img src={posterFor(event)} alt="" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-ink-800 via-ink-800/30 to-transparent" />
         </div>
 

@@ -66,11 +66,18 @@ Give search engines and sharers more than one URL.
 - [x] `sitemap.xml` regenerated at deploy time from the same payload
       (root + every event + every venue URL).
 
-### 1.3 Performance & Core Web Vitals
-- [ ] Self-host the three Google Fonts (removes render-blocking third-party
-      requests; also nice for privacy).
-- [ ] Audit LCP/CLS on mid-tier mobile; lazy-load event images with
-      `loading="lazy"` + explicit dimensions.
+### 1.3 Performance & Core Web Vitals ✅ shipped
+- [x] Self-host the three Google Fonts (latin + latin-ext woff2 subsets in
+      `public/fonts/`, `src/fonts.css`): no render-blocking third-party
+      requests, no font CDN privacy leak. Space Grotesk deduped to one
+      variable-font file per subset (Google's 400/500/700 were identical).
+      Above-the-fold faces (`Anton`, `Space Grotesk`) get `<link rel="preload">`.
+- [x] Replace the `picsum.photos` poster fallback with a local branded
+      placeholder SVG — the last third-party runtime request is gone; the app
+      is now fully self-contained except for event images and ticket links.
+- [x] `decoding="async"` on poster images (cards were already `loading="lazy"`;
+      card/drawer art is absolutely positioned in fixed-size boxes, so no CLS).
+- [x] PWA precache now includes fonts/SVG/PNG — full offline shell.
 
 ## Phase 2 — Shareability & retention
 - [ ] "Share" action on the event drawer (Web Share API, clipboard fallback)
@@ -116,3 +123,8 @@ Per instruction, none of these are acted on until signed off:
   sandbox-egress exception as above). Prerender smoke-tested against a local
   mock PostgREST: correct titles/OG/canonical/JSON-LD, accent-safe slugs
   (`Café Tacvba` → `cafe-tacvba`), correct sitemap.
+- **2026-07-05** — Phase 1.3 shipped: fonts self-hosted, picsum placeholder
+  replaced with local branded SVG, async image decoding, fonts precached.
+  With no external requests left, the full e2e suite is now **9/9 green in
+  the sandbox** (was 8/9 with the font-egress exception) and runs in ~4s
+  (was ~70s of waiting on dead third-party requests). Phase 1 complete.
