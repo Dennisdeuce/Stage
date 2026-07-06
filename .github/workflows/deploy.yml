@@ -2,7 +2,9 @@ name: Deploy (Cloudflare Pages)
 
 on:
   push:
-    branches: ["main"]
+    # The repo's default branch is claude/upbeat-darwin-3z46gs (no `main`
+    # exists); "main" is kept for a future rename.
+    branches: ["main", "claude/upbeat-darwin-3z46gs"]
     paths: ["web/**", ".github/workflows/deploy.yml"]
   workflow_dispatch: {}
 
