@@ -3,12 +3,23 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      // Second, dependency-light entry: the embeddable widget (SPRINT §3).
+      input: { main: "index.html", embed: "embed.html" }
+    }
+  },
   plugins: [
     react(),
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg"],
+      // Precache the self-hosted fonts and placeholder art for offline use.
+      workbox: { globPatterns: ["**/*.{js,css,html,svg,png,woff2}"] },
       manifest: {
+        id: "/",
+        lang: "en-US",
+        categories: ["entertainment", "music"],
         name: "PNW Stage",
         short_name: "PNW Stage",
         description: "Concerts & comedy across the Pacific Northwest, refreshed daily.",

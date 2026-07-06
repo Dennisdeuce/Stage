@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>Upcoming shows — PNW Stage</title>
+    <style>
+      /* Self-contained: system fonts, no external requests beyond the data. */
+      :root {
+        --bg: #0b0f0d;
+        --card: #141a17;
+        --line: #24302a;
+        --text: #ece7dc;
+        --dim: #8fa396;
+        --accent: #f5b544;
+        --hot: #ff5a3c;
+      }
+      [data-theme="light"] {
+        --bg: #f7f5f0;
+        --card: #ffffff;
+        --line: #ddd8cc;
+        --text: #16211b;
+        --dim: #5d6f64;
+      }
+      * { box-sizing: border-box; margin: 0; }
+      html, body { background: var(--bg); }
+      body {
+        font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: var(--text);
+        padding: 12px;
+      }
+      ol { list-style: none; padding: 0; display: grid; gap: 8px; }
+      a.ev {
+        display: flex; gap: 12px; align-items: baseline;
+        background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+        padding: 10px 12px; text-decoration: none; color: var(--text);
+      }
+      a.ev:hover { border-color: var(--accent); }
+      .d { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 0.08em;
+           text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+      .t { font-weight: 600; }
+      .v { color: var(--dim); font-size: 12px; }
+      .soldout { color: var(--hot); font-family: ui-monospace, monospace; font-size: 10px;
+                 text-transform: uppercase; letter-spacing: 0.08em; }
+      .empty, .foot { color: var(--dim); font-size: 12px; text-align: center; padding: 8px 0 2px; }
+      .foot a { color: var(--dim); }
+      .foot a:hover { color: var(--accent); }
+    </style>
+  </head>
+  <body>
+    <ol id="list" aria-label="Upcoming shows"></ol>
+    <p class="foot">
+      Powered by <a id="powered" href="https://pnw-stage.pages.dev/?utm_source=embed" target="_blank" rel="noopener">PNW Stage →</a>
+    </p>
+    <script type="module" src="/src/embed.ts"></script>
+  </body>
+</html>

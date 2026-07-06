@@ -14,14 +14,23 @@ import {
   matches,
   type Filters
 } from "./lib/filters";
+import { injectEventJsonLd, titleForTab } from "./lib/seo";
+import { parsePath, eventPath } from "./lib/routes";
 import type { EventRow } from "./lib/types";
 
 export default function App() {
   const params = new URLSearchParams(window.location.search);
+  const deepLink = useMemo(() => parsePath(window.location.pathname), []);
   const [filters, setFilters] = useState<Filters>(() => filtersFromParams(params));
-  const [tab, setTab] = useState<Tab>((params.get("view") as Tab) || "feed");
+  const [tab, setTab] = useState<Tab>(
+    () => (params.get("view") as Tab) || (deepLink?.kind === "venue" ? "venues" : "feed")
+  );
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [active, setActive] = useState<EventRow | null>(null);
+  // A shared /e/<id>-<slug> link waits for data, then opens the drawer (§1.2).
+  const [pendingEventId, setPendingEventId] = useState<number | null>(
+    deepLink?.kind === "event" ? deepLink.id : null
+  );
 
   // Capture last-visit BEFORE recording this visit, so the diff is correct (§6.3).
   const [since, setSince] = useState<Date | null>(() => readLastVisit());
@@ -31,14 +40,41 @@ export default function App() {
 
   const { events, health, loading, error } = useEvents(filters.showExpandable);
 
-  // Keep the URL in sync (shareable / restorable — §6.6).
+  // Resolve a pending event deep link once data is in. If the event isn't in
+  // the core payload it may be an expandable-metro show — reveal those once
+  // and let the refreshed `events` re-run this effect.
   useEffect(() => {
+    if (pendingEventId == null || loading) return;
+    const hit = events.find((e) => e.id === pendingEventId);
+    if (hit) {
+      setActive(hit);
+      setPendingEventId(null);
+    } else if (!filters.showExpandable) {
+      setFilters((f) => ({ ...f, showExpandable: true }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, loading, pendingEventId]);
+
+  // Keep the URL in sync (shareable / restorable — §6.6). The open event owns
+  // the path (§1.2 deep links); filters/tab live in the query string.
+  useEffect(() => {
+    if (pendingEventId != null) return; // don't clobber a not-yet-resolved deep link
     const p = paramsFromFilters(filters);
     if (tab !== "feed") p.set("view", tab);
     const qs = p.toString();
-    const url = qs ? `?${qs}` : window.location.pathname;
-    window.history.replaceState(null, "", url);
-  }, [filters, tab]);
+    const path = active ? eventPath(active) : "/";
+    window.history.replaceState(null, "", qs ? `${path}?${qs}` : path);
+  }, [filters, tab, active, pendingEventId]);
+
+  // Structured data reflects the full inventory, not the filter state (§1.1).
+  useEffect(() => {
+    injectEventJsonLd(events);
+  }, [events]);
+  useEffect(() => {
+    document.title = active
+      ? `${active.headliner ?? active.title} at ${active.venue_name} — PNW Stage`
+      : titleForTab(tab);
+  }, [tab, active]);
 
   const visible = useMemo(() => events.filter((e) => matches(e, filters)), [events, filters]);
   const isNew = (e: EventRow) => isNewSince(e.first_seen, since);
@@ -101,7 +137,14 @@ export default function App() {
       <EventDrawer event={active} onClose={() => setActive(null)} />
 
       <footer className="mx-auto max-w-5xl px-4 py-8 text-center font-mono text-[11px] uppercase tracking-widest text-moss">
-        Event data via Ticketmaster &amp; venue listings · Primary on-sale links only, never resale
+        Event data via Ticketmaster &amp; venue listings · Primary on-sale links only, never resale ·{" "}
+        <a href="/new-this-week" className="underline decoration-ink-600 underline-offset-2 hover:text-bone">
+          New this week
+        </a>{" "}
+        ·{" "}
+        <a href="/feed.xml" className="underline decoration-ink-600 underline-offset-2 hover:text-bone">
+          RSS
+        </a>
       </footer>
     </div>
   );

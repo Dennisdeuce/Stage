@@ -1,15 +1,19 @@
-import { X, Ticket, ExternalLink, MapPin, Clock, Calendar } from "lucide-react";
-import { useEffect } from "react";
+import { X, Ticket, ExternalLink, MapPin, Clock, Calendar, Share2, CalendarPlus } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { EventRow } from "../lib/types";
 import { showDate, showTime, priceLabel, posterFor } from "../lib/format";
+import { shareEvent } from "../lib/share";
+import { downloadIcs } from "../lib/ics";
 import { StatusBadge, TicketKindBadge } from "./StatusBadge";
 
 export function EventDrawer({ event, onClose }: { event: EventRow | null; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => ev.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+  useEffect(() => setCopied(false), [event]);
 
   if (!event) return null;
   const doors = showTime(event.doors_at);
@@ -28,7 +32,7 @@ export function EventDrawer({ event, onClose }: { event: EventRow | null; onClos
         </button>
 
         <div className="grain relative aspect-[4/3] w-full shrink-0">
-          <img src={posterFor(event)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img src={posterFor(event)} alt="" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-ink-800 via-ink-800/30 to-transparent" />
         </div>
 
@@ -75,6 +79,25 @@ export function EventDrawer({ event, onClose }: { event: EventRow | null; onClos
                 No ticket link yet
               </span>
             )}
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  if ((await shareEvent(event)) === "copied") {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }
+                }}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-md border border-ink-600 px-3 py-2 font-mono text-xs uppercase tracking-wider text-bone transition hover:border-moss/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-bone"
+              >
+                <Share2 size={13} /> {copied ? "Link copied" : "Share"}
+              </button>
+              <button
+                onClick={() => downloadIcs(event)}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-md border border-ink-600 px-3 py-2 font-mono text-xs uppercase tracking-wider text-bone transition hover:border-moss/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-bone"
+              >
+                <CalendarPlus size={13} /> Add to calendar
+              </button>
+            </div>
             <div className="flex items-center justify-between">
               <TicketKindBadge kind={event.ticket_url_type} />
               {event.source_url && (

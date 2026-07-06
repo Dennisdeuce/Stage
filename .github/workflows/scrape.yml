@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # to commit the heartbeat that keeps the repo (and cron) alive
+      actions: write # to trigger the deploy that refreshes prerendered pages/sitemap/RSS
     defaults:
       run:
         working-directory: scraper
@@ -34,6 +35,15 @@ jobs:
           TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
           BANDSINTOWN_APP_ID: ${{ secrets.BANDSINTOWN_APP_ID }}
         run: python pipeline.py
+
+      # Fresh data deserves fresh pages: redeploy so the prerendered event/venue
+      # stubs, sitemap and RSS feed reflect tonight's scrape (SPRINT §2).
+      - name: Trigger site deploy
+        if: success()
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref "$GITHUB_REF_NAME" || echo "deploy trigger skipped"
 
       - name: Heartbeat commit (keeps GH cron from disabling after 60 days idle)
         if: always()

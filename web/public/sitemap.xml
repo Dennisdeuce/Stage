@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Root only for now; per-event/venue URLs arrive with sprint Phase 1.2. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://pnw-stage.pages.dev/</loc>
+    <changefreq>daily</changefreq>
+  </url>
+</urlset>

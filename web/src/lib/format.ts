@@ -19,8 +19,9 @@ export function priceLabel(e: EventRow): string {
   return `$${Math.round(e.price_min)}`;
 }
 
+// Local branded placeholder — no third-party requests (SPRINT §1.3).
 export function posterFor(e: EventRow): string {
-  return e.image_url ?? `https://picsum.photos/seed/pnw-${e.id}/800/1000`;
+  return e.image_url ?? "/poster-placeholder.svg";
 }
 
 export const REGION_LABEL: Record<string, string> = {
