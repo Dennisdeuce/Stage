@@ -13,6 +13,7 @@ config:
 """
 from __future__ import annotations
 
+import html as htmllib
 from typing import Any
 
 from dateutil import parser as dateparser
@@ -83,6 +84,8 @@ class JSONAdapter:
             title = m("title")
             if not title:
                 continue
+            # WP APIs (e.g. Tribe Events) return entity-encoded titles.
+            title = htmllib.unescape(str(title))
             price_min = m("price_min")
             events.append(
                 RawEvent(

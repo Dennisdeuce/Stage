@@ -6,11 +6,13 @@ Source-type strategy (§3.1): feed-first. Big rooms come through the Ticketmaste
 Discovery API (queried by DMA, not per-venue). Clubs/arts/comedy use per-venue
 HTML adapters whose CSS selectors live in `source_config.selectors`.
 
-IMPORTANT (honesty note): the HTML `page_url`/`selectors` below are best-effort
-scaffolding. This build environment is network-restricted, so they could not be
-validated live. Wrong selectors simply yield zero events and surface as a red
-source-health badge — they never break other adapters (§5.6). Tune them against
-each live site and flip `verified` to true.
+Selector provenance: configs in VERIFIED_SOURCES were validated against the
+live sites (2026-07-06, see verify_sources.py) and carry `verified: True`.
+Venues NOT in that dict still use best-effort GENERIC_SELECTORS with
+`verified: False` — several sites are fully JS-rendered (Dice/VenuePilot/
+SeatEngine widgets) and need a JSON endpoint or a headless pass; wrong
+selectors simply yield zero events and surface as a red source-health badge —
+they never break other adapters (§5.6).
 
 Ticketmaster venue routing: until real `tm_venue_id`s are resolved and cached
 (populate `venue_index` in the TM sources / `venues.tm_venue_id`), TM events land
@@ -127,6 +129,170 @@ def venue_rows() -> list[dict]:
     return rows
 
 
+# Live-validated per-venue source configs (see module docstring). Keyed by
+# venue slug; `kind` defaults to "html". Venues listed here are excluded from
+# the generic fallback loop. Re-validate with: python verify_sources.py
+VERIFIED_SOURCES: dict[str, dict] = {
+    "tractor-tavern": {
+        "page_url": "https://tractortavern.com/calendar/",
+        "selectors": {
+            "item": "div.flexmedia--artistevents",
+            "title": ".artisteventsname",
+            "date": ".artisteventstime",
+            "url": ".eventinfo a",
+        },
+    },
+    "nectar-lounge": {
+        "page_url": "https://nectarlounge.com/events/calendar/",
+        "selectors": {
+            "item": "div.sg-events__event",
+            "title": ".sg-events__event-title",
+            "date": "time.sg-events__event-date",
+            "url": ".sg-events__event-title-link",
+            "image": ".sg-events__event-featured-image",
+        },
+    },
+    "neumos": {
+        "page_url": "https://www.neumos.com/events",
+        "date_attr": "aria-label",
+        "selectors": {
+            "item": "div.eventItem",
+            "title": "h3.title",
+            "date": ".date",
+            "url": "h3.title a",
+            "image": ".thumb img",
+        },
+    },
+    "barboza": {
+        "page_url": "https://www.thebarboza.com/events",
+        "date_attr": "aria-label",
+        "selectors": {
+            "item": "div.eventItem",
+            "title": "h3.title",
+            "date": ".date",
+            "url": "h3.title a",
+            "image": ".thumb img",
+        },
+    },
+    "mccaw-hall": {
+        "page_url": "https://www.mccawhall.com/events",
+        "selectors": {
+            "item": "div.entry",
+            "title": ".info h3",
+            "date": ".date",
+            "url": ".info h3 a",
+            "image": ".thumb img",
+        },
+    },
+    "el-corazon": {
+        # Server-rendered Webflow list; covers both rooms (El Corazón + Funhouse).
+        "page_url": "https://www.elcorazonseattle.com/",
+        "selectors": {
+            "item": "div.event-div",
+            "title": ".headliners",
+            "date": ".day-date",
+            "url": "a.opendate",
+            "image": ".show-image-wrapper img",
+        },
+    },
+    "the-crocodile": {
+        "page_url": "https://calendar.thecrocodile.com/",
+        "selectors": {
+            "item": "div.uui-layout88_item.w-dyn-item",
+            "title": "h3.uui-heading-xxsmall-2",
+            "date": ".cal-start-date",
+            "url": "a",
+            "image": ".show-image-wrapper img",
+        },
+    },
+    "aladdin-theater": {
+        # Etix-powered; the meta[itemprop=startDate] mislabels local time as
+        # UTC, so read the human date instead (date-only, no bogus hour).
+        "page_url": "https://www.aladdin-theater.com/",
+        "selectors": {
+            "item": "div.event.event--list-style",
+            "title": "h3.event-title",
+            "date": ".event-date--full",
+            "url": "a.event-action",
+            "image": ".event-image img",
+        },
+    },
+    "mount-baker-theatre": {
+        "page_url": "https://www.mountbakertheatre.com/events-tickets/",
+        "selectors": {
+            "item": "div.c-col-card--event",
+            "title": "h3.c-col-title",
+            "date": ".c-col-card__time",
+            "url": "a.c-col-card__link",
+        },
+    },
+    "helium-comedy-portland": {
+        "page_url": "https://portland.heliumcomedy.com/events",
+        "selectors": {
+            "item": "div.event-expand-toggle",
+            "title": "h3.el-header",
+            "date": ".el-date-range",
+            "url": "h3.el-header a",
+            "image": ".el-image img",
+        },
+    },
+    "pantages-theater": {
+        # Tacoma Arts Live's calendar (Modern Events Calendar) spans their
+        # rooms (Pantages/Rialto/Armory); all map to this org venue for now.
+        "page_url": "https://www.tacomaartslive.org/upcoming-events/",
+        "selectors": {
+            "item": "article.mec-event-article",
+            "title": ".mec-event-title",
+            "date": ".mec-start-date-label",
+            "url": ".mec-event-title a",
+            "image": ".mec-event-image img",
+        },
+    },
+    "ilani-casino": {
+        # Date tiles carry no year; dateutil assumes the current year, which
+        # holds for this near-term schedule page.
+        "page_url": "https://ilaniresort.com/events-and-promotions/schedule-of-events/",
+        "selectors": {
+            "item": "div.event.my-3",
+            "title": ".calendar-tile-title",
+            "date": ".events-date-tile-view",
+            "url": "a",
+            "image": "img",
+        },
+    },
+    # WordPress "The Events Calendar" sites — use their JSON API, not HTML.
+    "crystal-ballroom": {
+        "kind": "json",
+        "feed_url": "https://www.crystalballroompdx.com/wp-json/tribe/events/v1/events?per_page=50",
+        "items_path": "events",
+        "map": {
+            "title": "title",
+            "starts_at": "start_date",
+            "description": "excerpt",
+            "image_url": "image.url",
+            "source_url": "url",
+            "ticket_url": "website",
+        },
+    },
+    "laughs-comedy-kirkland": {
+        "kind": "json",
+        "feed_url": "https://laughscomedyclub.com/wp-json/tribe/events/v1/events?per_page=50",
+        "items_path": "events",
+        "map": {
+            "title": "title",
+            "starts_at": "start_date",
+            "description": "excerpt",
+            "image_url": "image.url",
+            "source_url": "url",
+            "ticket_url": "website",
+        },
+    },
+}
+
+# Venues fed by the shared showboxpresents source below, not per-venue rows.
+MULTI_VENUE_SOURCED = {"the-showbox", "showbox-sodo"}
+
+
 def source_rows() -> list[dict]:
     """One source per adapter. STG = 1 source for 3 venues; TM = per-DMA."""
     sources: list[dict] = []
@@ -199,22 +365,60 @@ def source_rows() -> list[dict]:
         },
     })
 
-    # Per-venue HTML sources for every html venue.
+    # Showbox Presents lists its whole AEG network on one page; route rooms by
+    # the item's venue line and drop out-of-town entries (validated live).
+    sources.append({
+        "slug": "showboxpresents",
+        "kind": "html",
+        "is_active": True,
+        "config": {
+            "page_url": "https://www.showboxpresents.com/events/all",
+            "base_url": "https://www.showboxpresents.com",
+            "source_priority": 10,
+            "venue_map": {
+                "The Showbox": "the-showbox",
+                "Showbox SoDo": "showbox-sodo",
+            },
+            "selectors": {
+                "item": "div.entry.showboxpresents",
+                "title": "h3 a",
+                "date": "span.date",
+                "url": ".title h3 a",
+                "image": ".thumb img",
+                "venue": "span.venue",
+            },
+            "verified": True,
+        },
+    })
+
+    # Per-venue sources for every html venue: live-validated config when we
+    # have one, generic best-effort selectors otherwise.
     html_venues = [(slug, website) for slug, _n, _m, _r, _c, _s, website, kind, *_ in VENUES if kind == "html"]
     for slug, website in html_venues:
-        sources.append({
-            "slug": slug,
-            "kind": "html",
-            "is_active": True,
-            "config": {
+        if slug in MULTI_VENUE_SOURCED:
+            continue
+        override = VERIFIED_SOURCES.get(slug)
+        if override:
+            kind = override.get("kind", "html")
+            config: dict = {
+                "venue_slug": slug,
+                "source_priority": 10,  # venue feed beats TM
+                "verified": True,
+                **{k: v for k, v in override.items() if k != "kind"},
+            }
+            if kind == "html":
+                config.setdefault("base_url", website)
+        else:
+            kind = "html"
+            config = {
                 "venue_slug": slug,
                 "page_url": website,           # TODO: point at the actual calendar path
                 "base_url": website,
-                "source_priority": 10,         # venue feed beats TM
+                "source_priority": 10,
                 "selectors": GENERIC_SELECTORS,
                 "verified": False,
-            },
-        })
+            }
+        sources.append({"slug": slug, "kind": kind, "is_active": True, "config": config})
     return sources
 
 

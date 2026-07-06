@@ -6,14 +6,21 @@ selectors so most venues need no bespoke code.
 
 config:
   page_url:   the calendar page to scrape
-  venue_slug: registry slug
+  venue_slug: registry slug (single-venue pages)
   base_url:   for resolving relative hrefs (default = page_url origin)
-  selectors:  { item, title, date, url, image, description, price }
+  selectors:  { item, title, date, url, image, description, price, venue }
   date_attr:  optional attribute to read the date from (e.g. "datetime")
   tz:         optional timezone
+
+Multi-venue listing pages (e.g. a promoter site covering several rooms) may
+route items like the STG adapter does:
+  venue_map:          { "venue display name substring": "registry-slug", ... }
+  default_venue_slug: fallback when the venue text matches nothing; when
+                      omitted, unmatched items are dropped (out-of-network).
 """
 from __future__ import annotations
 
+import re
 from typing import Any
 from urllib.parse import urljoin
 
@@ -22,6 +29,29 @@ from dateutil import parser as dateparser
 
 from models import RawEvent
 from .base import HttpClient
+
+_DASH = re.compile(r"\s+[-–—]\s+|\s*[–—]\s*")
+_YEAR = re.compile(r"\b20\d\d\b")
+
+
+def parse_event_date(text: str):
+    """Parse a human event date, tolerating ranges like "Jul 20 - 24, 2026"
+    or "July 07 - August 05" by keeping the range start (plus the year, which
+    sites usually print only at the end)."""
+    candidates = [text]
+    parts = _DASH.split(text, maxsplit=1)
+    if len(parts) == 2 and parts[0].strip():
+        start = parts[0].strip()
+        year = _YEAR.search(text)
+        if year and not _YEAR.search(start):
+            start = f"{start} {year.group()}"
+        candidates.insert(0, start)
+    for cand in candidates:
+        try:
+            return dateparser.parse(cand, fuzzy=True)
+        except (ValueError, OverflowError):
+            continue
+    return None
 
 
 class HTMLAdapter:
@@ -36,12 +66,14 @@ class HTMLAdapter:
         if not selector or node is None:
             return None
         el = node.select_one(selector)
-        return el.get_text(strip=True) if el else None
+        # Space-join so sibling spans ("Jul" "7" "2026") stay parseable.
+        return " ".join(el.get_text(" ", strip=True).split()) if el else None
 
     def fetch(self) -> list[RawEvent]:
         cfg = self.config
         page_url = cfg["page_url"]
-        venue_slug = cfg["venue_slug"]
+        venue_slug = cfg.get("venue_slug")
+        venue_map: dict[str, str] = cfg.get("venue_map") or {}
         base_url = cfg.get("base_url", page_url)
         tz = cfg.get("tz", "America/Los_Angeles")
         sel = cfg["selectors"]
@@ -56,6 +88,17 @@ class HTMLAdapter:
             if not title:
                 continue
 
+            # Venue routing for multi-venue pages (mirrors the STG adapter).
+            item_venue = venue_slug
+            if venue_map:
+                vtext = (self._text(node, sel.get("venue")) or "").lower()
+                item_venue = next(
+                    (slug for name, slug in venue_map.items() if name.lower() in vtext),
+                    cfg.get("default_venue_slug"),
+                )
+                if not item_venue:
+                    continue  # out-of-network venue — drop
+
             # Date: from an attribute (e.g. <time datetime="...">) or text.
             date_val = None
             if date_attr and sel.get("date"):
@@ -64,12 +107,7 @@ class HTMLAdapter:
                     date_val = el[date_attr]
             if not date_val:
                 date_val = self._text(node, sel.get("date"))
-            starts_at = None
-            if date_val:
-                try:
-                    starts_at = dateparser.parse(date_val, fuzzy=True)
-                except (ValueError, OverflowError):
-                    starts_at = None
+            starts_at = parse_event_date(date_val) if date_val else None
 
             # Link
             url = None
@@ -88,7 +126,7 @@ class HTMLAdapter:
             events.append(
                 RawEvent(
                     source_slug=self.slug,
-                    venue_slug=venue_slug,
+                    venue_slug=item_venue,
                     title=title,
                     starts_at=starts_at,
                     tz=tz,

@@ -121,6 +121,14 @@ Per instruction, none of these are acted on until signed off:
 
 ---
 
+## Post-sprint: inventory unlock (2026-07-06)
+Organic growth is bounded by inventory, so after merge the scraper's biggest
+honest gap was closed: **16 venues live-verified** (14 HTML configs + 2 Tribe
+JSON APIs + Showbox network venue-routing), ~900 events parsing with dates
+and primary ticket links, tooling in `scraper/verify_sources.py`, and 9 new
+offline adapter tests. Remaining unverified venues are JS-rendered widgets
+needing JSON endpoint mapping (future work, no sign-off needed).
+
 ## Execution log
 - **2026-07-05** — Sprint doc authored and committed. Phase 1.1 implemented
   (meta/OG/Twitter, og.png generator, robots.txt, sitemap.xml, WebSite +

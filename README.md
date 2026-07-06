@@ -158,10 +158,19 @@ npx playwright install chromium && npm run test:e2e
 > if it's a new HTML layout). Venues are never hardcoded in the UI.
 
 ### Honest notes & open items
-- **HTML adapters ship with placeholder selectors** (`verified: false`). The build
-  sandbox couldn't reach venue sites to validate them, so wrong selectors will just
-  yield zero events and show a **"Check source"** badge — they never break other
-  adapters (failure isolation, §5.6). Tune selectors per site and flip `verified`.
+- **16 venues now have live-verified sources** (2026-07-06): Showbox + Showbox
+  SoDo (shared network source with venue routing), Tractor Tavern, El Corazón,
+  The Crocodile, Neumos, Barboza, Nectar Lounge, McCaw Hall, Aladdin Theater,
+  Mount Baker Theatre, Helium Comedy PDX, Tacoma Arts Live, ilani, plus
+  Crystal Ballroom and Laughs Comedy via their WP Events JSON APIs — ~900
+  events parse with dates and primary links. Re-check anytime with
+  `python scraper/verify_sources.py`.
+- **Remaining venues keep generic selectors** (`verified: false`): their sites
+  are JS-rendered widgets (Dice, VenuePilot, SeatEngine, AudienceView…) or had
+  TLS issues (Jazz Alley, Little Red Hen). Wrong selectors just yield zero
+  events and a **"Check source"** badge — they never break other adapters
+  (failure isolation, §5.6). Each needs its underlying JSON endpoint mapped
+  (the `json` adapter is config-driven) or a headless pass.
 - **Ticketmaster venue routing:** until real `tm_venue_id`s are resolved and cached
   (populate `venue_index` in the TM sources), TM events land on per-DMA catch-all
   venues (`tm-seattle-tacoma`, `tm-portland`, `tm-vancouver-bc`).
